@@ -16,9 +16,9 @@ let currentLocation = {
 };
 const pool =new Pool({
     user:'postgres',
-    host:'',
+    host:'xxxx',
     database:'trafficdb',
-    password: '',
+    password: 'xxx',
     port:5432,
 })
 
@@ -32,7 +32,8 @@ let lastKnowLocation={
     lat:0,
     lng:0,
     id:'live-moji-24',
-    timeStamp: new Date(0)
+    timeStamp: new Date(0),
+    sid:1
 }
 async function fetchLatestLocation(){
     try{
@@ -41,26 +42,29 @@ async function fetchLatestLocation(){
                 g."deviceId",
                 g.id, 
                 ST_Y(l.geo_point::geometry) AS latitude,
-                ST_X(l.geo_point::geometry) AS longitude
+                ST_X(l.geo_point::geometry) AS longitude,
+                l.id as sid
             FROM
                 public."gps-data" g
             JOIN
                 location_instances l ON l.gps_id = g.id
             WHERE
-                g."deviceId" = $1
+                g."deviceId" = $1 and l.id>$2
             ORDER BY
                 g.id DESC 
             LIMIT 1
-            `,[lastKnowLocation.id])
+            `,[lastKnowLocation.id,lastKnowLocation.sid])
             if (res.rows.length>0){
                 const latest= res.rows[0]
                 const newTimestamp = new Date(latest.id);
-                if (newTimestamp>lastKnowLocation.timeStamp){
+                let lastId=latest.sid
+                if (lastId>lastKnowLocation.sid){
                     lastKnowLocation={
                         lat:latest.latitude,
                         lng:latest.longitude,
                         id:latest.deviceId,
-                        timeStamp:latest.id
+                        timeStamp:latest.id,
+                        sid:lastId
                     }
                 }
                 console.log('Fetch and emitting db update:',lastKnowLocation)
