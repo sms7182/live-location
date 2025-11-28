@@ -9,4 +9,4 @@ RUN npm install
 COPY . .
 EXPOSE 7000
 
-CMD [ "node","server.js" ]
+CMD [ "node","server-consum.js" ]
